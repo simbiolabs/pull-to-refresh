@@ -1,0 +1,30 @@
+name: Auto merge
+
+# Enables GitHub native auto-merge (squash) on eligible pull requests to main.
+# Branch protection already requires status checks, so the merge waits until
+# those checks pass. This workflow is not itself a required check.
+# Skip draft pull requests, pull requests from forks, and any pull request
+# labeled no-auto-merge.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable:
+    name: Enable auto-merge
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !contains(github.event.pull_request.labels.*.name, 'no-auto-merge')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable squash auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge "${{ github.event.pull_request.number }}" --repo "$GITHUB_REPOSITORY" --auto --squash
